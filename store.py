@@ -66,7 +66,7 @@ class Store:
         """
         Returns the combined quantity of all products in stock.
         """
-        return sum(p.get_quantity() for p in self.inventory)
+        return sum(p.quantity for p in self.inventory)
 
 
     def get_all_products(self) -> list[products.Product]:
