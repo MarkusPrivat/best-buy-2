@@ -97,3 +97,35 @@ def test_product_buy_negative():
     with pytest.raises(ValueError, match="Purchase quantity must be positive"):
         test_product.buy(-1)
 
+
+def test_product_get_price():
+    test_product = Product("Apple Neo", 599, 5)
+    assert test_product.price == 599
+
+
+def test_product_set_price():
+    test_product = Product("Apple Neo", 599, 5)
+    test_product.price = 500
+    assert test_product.price == 500
+
+def test_product_set_price_negativ():
+    test_product = Product("Apple Neo", 599, 5)
+    with pytest.raises(ValueError, match="Price cannot be negative"):
+        test_product.price = -1
+
+
+@pytest.mark.parametrize("invalid_price", [
+    "Best Price",
+    ["Best Price"],
+    {"Best Price"},
+    {"Best Price": 599}
+], ids=[
+    "str",
+    "list",
+    "set",
+    "dict"
+])
+def test_product_set_price(invalid_price):
+    test_product = Product("Apple Neo", 599, 55)
+    with pytest.raises(TypeError, match="Price must be a number \(int or float\)"):
+        test_product.price = invalid_price

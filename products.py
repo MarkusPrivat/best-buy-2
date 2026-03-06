@@ -11,10 +11,10 @@ Classes:
         A class to represent a product in an inventory system.
 
         Attributes:
-            name (str): Name of the product.
-            price (float): Price per unit.
-            quantity (int): Available stock quantity.
-            active (bool): Whether the product is available for purchase.
+            self.name (str): Name of the product.
+            self.price (float): Price per unit.
+            self.quantity (int): Available stock quantity.
+            self.active (bool): Whether the product is available for purchase.
 
         Methods:
             get_quantity(): Returns current stock quantity.
@@ -25,17 +25,17 @@ Classes:
             show(): Prints product details.
             buy(quantity): Processes a purchase and returns total price.
 """
-
+from promotions import Promotion
 
 class Product:
     """
     A class representing a product in the store.
 
     Attributes:
-        name (str): The name of the product.
-        price (float): The unit price of the product.
-        quantity (int): The current stock level.
-        active (bool): Status indicating if the product is available for sale.
+        __name (str): The name of the product.
+        __price (float): The unit price of the product.
+        __quantity (int): The current stock level.
+        __active (bool): Status indicating if the product is available for sale.
     """
 
 
@@ -63,17 +63,17 @@ class Product:
             raise ValueError("Price cannot be negative")
         if quantity < 0:
             raise ValueError("Quantity cannot be negative")
-        self.name = name
-        self.price = price
-        self.quantity = quantity
-        self.active = self.quantity > 0
+        self.__name = name
+        self.__price = price
+        self.__quantity = quantity
+        self.__active = self.__quantity > 0
 
 
     def get_quantity(self) -> int:
         """
         Returns the current stock quantity of the product.
         """
-        return self.quantity
+        return self.__quantity
 
 
     def set_quantity(self, quantity):
@@ -81,9 +81,9 @@ class Product:
         Updates the stock quantity.
         Deactivates the product if quantity reaches zero.
         """
-        self.quantity = quantity
-        if self.quantity <= 0:
-            self.quantity = 0
+        self.__quantity = quantity
+        if self.__quantity <= 0:
+            self.__quantity = 0
             self.deactivate()
 
 
@@ -91,7 +91,7 @@ class Product:
         """
         Returns True if the product is currently active.
         """
-        return self.active
+        return self.__active
 
 
     def activate(self):
@@ -100,23 +100,23 @@ class Product:
         Raises:
             ValueError: If quantity is 0 or less, preventing activation of empty stock.
         """
-        if self.quantity < 0:
-            raise ValueError(f"Cannot activate '{self.name}': Quantity is {self.quantity}.")
-        self.active = True
+        if self.__quantity < 0:
+            raise ValueError(f"Cannot activate '{self.__name}': Quantity is {self.__quantity}.")
+        self.__active = True
 
 
     def deactivate(self):
         """
         Sets the product status to inactive.
         """
-        self.active = False
+        self.__active = False
 
 
     def show(self):
         """
         Prints a string representation of the product's current state.
         """
-        print(f"{self.name}, Price: ${self.price}, Quantity: {self.quantity}")
+        print(f"{self.__name}, Price: ${self.__price}, Quantity: {self.__quantity}")
 
 
     def buy(self, quantity: int) -> float:
@@ -131,12 +131,24 @@ class Product:
         """
         if quantity <= 0:
             raise ValueError("Purchase quantity must be positive")
-        if quantity > self.quantity:
+        if quantity > self.__quantity:
             raise ValueError("Not enough stock available.")
 
         new_quantity = self.get_quantity() - quantity
         self.set_quantity(new_quantity)
-        return float(self.price * quantity)
+        return float(self.__price * quantity)
+
+    @property
+    def price(self) -> float | int:
+        return self.__price
+
+    @price.setter
+    def price(self, value: float):
+        if not isinstance(value, (int, float)):
+            raise TypeError("Price must be a number (int or float)")
+        if value < 0:
+            raise ValueError("Price cannot be negative")
+        self.__price = value
 
 
 class NonStockedProduct(Product):
@@ -150,26 +162,26 @@ class NonStockedProduct(Product):
         print("Quantity can not be changed for non-stock products")
 
     def show(self):
-        print(f"{self.name}, Price: ${self.price}")
+        print(f"{self.__name}, Price: ${self.__price}")
 
     def buy(self, quantity: int) -> float:
         if quantity <= 0:
             raise ValueError("Purchase quantity must be positive")
-        return float(self.price * quantity)
-
+        return float(self.__price * quantity)
 
 
 class LimitedProduct(Product):
     def __init__(self, name: str, price: float | int, quantity: int, order_limit: int):
         super().__init__(name, price, quantity)
-        self.maximum = order_limit
+        self.__order_limit = order_limit
 
     def show(self):
-        print(f"{self.name}, Price: ${self.price}, Quantity: {self.quantity}, Order Limit: {self.maximum}")
+        print(f"{self.__name}, Price: ${self.__price}, Quantity: {self.__quantity}, "
+              f"Order Limit: {self.__order_limit}")
 
     def buy(self, quantity: int) -> float:
-        if quantity > self.maximum:
-            raise ValueError(f"Quantity exceeds the order limit of {self.maximum}")
+        if quantity > self.__order_limit:
+            raise ValueError(f"Quantity exceeds the order limit of {self.__order_limit}")
         return super().buy(quantity)
 
 
