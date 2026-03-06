@@ -63,20 +63,21 @@ class Product:
             raise ValueError("Price cannot be negative")
         if quantity < 0:
             raise ValueError("Quantity cannot be negative")
+        self.__promotion: Promotion | None = None
         self.__name = name
         self.__price = price
         self.__quantity = quantity
         self.__active = self.__quantity > 0
 
-
-    def get_quantity(self) -> int:
+    @property
+    def quantity(self) -> int:
         """
         Returns the current stock quantity of the product.
         """
         return self.__quantity
 
-
-    def set_quantity(self, quantity):
+    @quantity.setter
+    def quantity(self, quantity):
         """
         Updates the stock quantity.
         Deactivates the product if quantity reaches zero.
@@ -134,9 +135,13 @@ class Product:
         if quantity > self.__quantity:
             raise ValueError("Not enough stock available.")
 
-        new_quantity = self.get_quantity() - quantity
-        self.set_quantity(new_quantity)
+        new_quantity = self.quantity - quantity
+        self.quantity = new_quantity
         return float(self.__price * quantity)
+
+    @property
+    def name(self) -> str:
+        return self.__name
 
     @property
     def price(self) -> float | int:
@@ -150,24 +155,36 @@ class Product:
             raise ValueError("Price cannot be negative")
         self.__price = value
 
+    @property
+    def promotion(self) -> Promotion:
+        return self.__promotion
+
+    @promotion.setter
+    def promotion(self, promotion: Promotion):
+        if not isinstance(promotion, Promotion):
+            raise TypeError("Promotion must be a Type Promotion")
+        self.__promotion = promotion
+
 
 class NonStockedProduct(Product):
     def __init__(self, name: str, price: float | int):
         super().__init__(name, price, 0)
 
-    def get_quantity(self) -> int:
+    @property
+    def quantity(self) -> int:
         return 0
 
-    def set_quantity(self, quantity):
+    @quantity.setter
+    def quantity(self, _quantity):
         print("Quantity can not be changed for non-stock products")
 
     def show(self):
-        print(f"{self.__name}, Price: ${self.__price}")
+        print(f"{self.name}, Price: ${self.price}")
 
     def buy(self, quantity: int) -> float:
         if quantity <= 0:
             raise ValueError("Purchase quantity must be positive")
-        return float(self.__price * quantity)
+        return float(self.price * quantity)
 
 
 class LimitedProduct(Product):
@@ -175,13 +192,17 @@ class LimitedProduct(Product):
         super().__init__(name, price, quantity)
         self.__order_limit = order_limit
 
+    @property
+    def order_limit(self):
+        return self.__order_limit
+
     def show(self):
-        print(f"{self.__name}, Price: ${self.__price}, Quantity: {self.__quantity}, "
-              f"Order Limit: {self.__order_limit}")
+        print(f"{self.name}, Price: ${self.price}, Quantity: {self.quantity}, "
+              f"Order Limit: {self.order_limit}")
 
     def buy(self, quantity: int) -> float:
-        if quantity > self.__order_limit:
-            raise ValueError(f"Quantity exceeds the order limit of {self.__order_limit}")
+        if quantity > self.order_limit:
+            raise ValueError(f"Quantity exceeds the order limit of {self.order_limit}")
         return super().buy(quantity)
 
 
@@ -200,7 +221,7 @@ def main():
     bose.show()
     mac.show()
 
-    bose.set_quantity(1000)
+    bose.quantity = 1000
     bose.show()
 
 

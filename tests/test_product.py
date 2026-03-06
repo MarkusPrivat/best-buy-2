@@ -1,7 +1,7 @@
 import pytest
 
 import products
-from products import Product
+from products import Product, NonStockedProduct, LimitedProduct
 
 
 
@@ -15,7 +15,7 @@ def test_init_product(valid_price):
     assert test_product.name == "Apple Neo"
     assert test_product.price == valid_price
     assert test_product.quantity == 10
-    assert test_product.active is True
+    assert test_product.is_active() is True
 
 
 def test_init_product_no_name():
@@ -73,11 +73,11 @@ def test_init_product_quantity_invalid_types(invalid_quantity):
 
 def test_product_quantity_deactivate():
     test_product = products.Product("Apple Neo", 599, 10)
-    test_product.set_quantity(0)
-    assert test_product.is_active() == False
+    test_product.quantity = 0
+    assert not test_product.is_active()
     test_product = products.Product("Apple Neo", 599, 10)
     test_product.buy(10)
-    assert test_product.is_active() == False
+    assert not test_product.is_active()
 
 
 def test_product_buy():
@@ -125,7 +125,36 @@ def test_product_set_price_negativ():
     "set",
     "dict"
 ])
-def test_product_set_price(invalid_price):
+def test_product_set_invalid_price(invalid_price):
     test_product = Product("Apple Neo", 599, 55)
     with pytest.raises(TypeError, match="Price must be a number \(int or float\)"):
         test_product.price = invalid_price
+
+
+def test_non_stocked_product_quantity_immutable():
+    test_product = NonStockedProduct("Apple Neo", 599)
+    assert test_product.quantity == 0
+    test_product.quantity = 100
+    assert test_product.quantity == 0
+
+
+def test_non_stocked_product_buy():
+    test_product = NonStockedProduct("Apple Neo", 200)
+    assert test_product.buy(3) == 600
+
+
+def test_limited_product_order_limit():
+    test_product = LimitedProduct("Apple Neo", 200, 10, 2)
+    assert test_product.order_limit == 2
+
+
+def test_limited_product_buy():
+    test_product = LimitedProduct("Apple Neo", 200, 10, 2)
+    assert test_product.buy(2) == 400
+
+
+@pytest.mark.parametrize("order_limit", [3])
+def test_limited_product_buy_over_limit(order_limit):
+    test_product = LimitedProduct("Apple Neo", 200, order_limit, (order_limit - 1))
+    with pytest.raises(ValueError, match=f"Quantity exceeds the order limit of {order_limit - 1}"):
+        test_product.buy(order_limit)
