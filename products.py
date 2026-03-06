@@ -39,7 +39,7 @@ class Product:
     """
 
 
-    def __init__(self, name: str, price: float, quantity: int):
+    def __init__(self, name: str, price: float | int, quantity: int):
         """
         Initializes a new Product instance with strict type and value validation.
 
@@ -137,6 +137,41 @@ class Product:
         new_quantity = self.get_quantity() - quantity
         self.set_quantity(new_quantity)
         return float(self.price * quantity)
+
+
+class NonStockedProduct(Product):
+    def __init__(self, name: str, price: float | int):
+        super().__init__(name, price, 0)
+
+    def get_quantity(self) -> int:
+        return 0
+
+    def set_quantity(self, quantity):
+        print("Quantity can not be changed for non-stock products")
+
+    def show(self):
+        print(f"{self.name}, Price: ${self.price}")
+
+    def buy(self, quantity: int) -> float:
+        if quantity <= 0:
+            raise ValueError("Purchase quantity must be positive")
+        return float(self.price * quantity)
+
+
+
+class LimitedProduct(Product):
+    def __init__(self, name: str, price: float | int, quantity: int, order_limit: int):
+        super().__init__(name, price, quantity)
+        self.maximum = order_limit
+
+    def show(self):
+        print(f"{self.name}, Price: ${self.price}, Quantity: {self.quantity}, Order Limit: {self.maximum}")
+
+    def buy(self, quantity: int) -> float:
+        if quantity > self.maximum:
+            raise ValueError(f"Quantity exceeds the order limit of {self.maximum}")
+        return super().buy(quantity)
+
 
 
 def main():
