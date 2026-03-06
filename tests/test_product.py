@@ -1,15 +1,20 @@
 import pytest
 
-import products
+
 from products import Product, NonStockedProduct, LimitedProduct
+from promotions import PercentDiscount, SecondHalfPrice, ThirdOneFree
 
 
+INVALID_PRICE_TYPES = ["Best Price", ["Best Price"], {"Best Price"}, {"Best Price": 599}]
+INVALID_PRICE_TYPES_IDS= ["str", "list", "set", "dict"]
+INVALID_QUANTITY_TYPES = [1.1, "Many", ["Big"], {"100"}, {"Best": 599}]
+INVALID_QUANTITY_TYPES_IDS = ["float", "str", "list", "set", "dict"]
 
 @pytest.mark.parametrize('valid_price',
                          [599, 599.99],
                          ids=["int_price", "float_price"])
 def test_init_product(valid_price):
-    test_product = products.Product("Apple Neo", valid_price, 10)
+    test_product = Product("Apple Neo", valid_price, 10)
 
     assert isinstance(test_product, Product)
     assert test_product.name == "Apple Neo"
@@ -26,6 +31,9 @@ def test_init_product_no_name():
 def test_init_product_negative_price():
     with pytest.raises(ValueError, match="Price cannot be negative"):
         Product("Apple Neo", -1, 5)
+
+
+def test_init_product_price_zero():
     test_product = Product("Apple Neo", 0, 111)
     assert isinstance(test_product, Product)
 
@@ -33,55 +41,36 @@ def test_init_product_negative_price():
 def test_init_product_negative_quantity():
     with pytest.raises(ValueError, match="Quantity cannot be negative"):
         Product("Apple Neo", 599, -5)
+
+
+def test_init_product_quantity_zero():
     test_product = Product("Apple Neo", 599, 0)
     assert isinstance(test_product, Product)
 
 
-@pytest.mark.parametrize("invalid_price", [
-    "Best Price",
-    ["Best Price"],
-    {"Best Price"},
-    {"Best Price": 599}
-], ids=[
-    "str",
-    "list",
-    "set",
-    "dict"
-])
-def test_init_product_price_invalid_types(invalid_price):
+@pytest.mark.parametrize("invalid_price_type",INVALID_PRICE_TYPES, ids=INVALID_PRICE_TYPES_IDS)
+def test_init_product_price_invalid_types(invalid_price_type):
     with pytest.raises(TypeError, match="Price must be a number \(int or float\)"):
-        Product("Apple Neo", invalid_price, 55)
+        Product("Apple Neo", invalid_price_type, 55)
 
 
-@pytest.mark.parametrize("invalid_quantity", [
-    1.1,
-    "Many",
-    ["Big"],
-    {"100"},
-    {"Best": 599}
-], ids=[
-    "float",
-    "str",
-    "list",
-    "set",
-    "dict"
-])
+@pytest.mark.parametrize("invalid_quantity", INVALID_QUANTITY_TYPES, ids=INVALID_QUANTITY_TYPES_IDS)
 def test_init_product_quantity_invalid_types(invalid_quantity):
     with pytest.raises(TypeError, match="Quantity must be an integer"):
         Product("Apple Neo", 599, invalid_quantity)
 
 
 def test_product_quantity_deactivate():
-    test_product = products.Product("Apple Neo", 599, 10)
+    test_product = Product("Apple Neo", 599, 10)
     test_product.quantity = 0
     assert not test_product.is_active()
-    test_product = products.Product("Apple Neo", 599, 10)
+    test_product = Product("Apple Neo", 599, 10)
     test_product.buy(10)
     assert not test_product.is_active()
 
 
 def test_product_buy():
-    test_product = products.Product("Apple Neo", 599, 10)
+    test_product = Product("Apple Neo", 599, 10)
     test_product.buy(5)
     assert test_product.quantity == 5
 
@@ -114,17 +103,7 @@ def test_product_set_price_negativ():
         test_product.price = -1
 
 
-@pytest.mark.parametrize("invalid_price", [
-    "Best Price",
-    ["Best Price"],
-    {"Best Price"},
-    {"Best Price": 599}
-], ids=[
-    "str",
-    "list",
-    "set",
-    "dict"
-])
+@pytest.mark.parametrize("invalid_price", INVALID_PRICE_TYPES, ids=INVALID_PRICE_TYPES_IDS)
 def test_product_set_invalid_price(invalid_price):
     test_product = Product("Apple Neo", 599, 55)
     with pytest.raises(TypeError, match="Price must be a number \(int or float\)"):
@@ -158,3 +137,35 @@ def test_limited_product_buy_over_limit(order_limit):
     test_product = LimitedProduct("Apple Neo", 200, order_limit, (order_limit - 1))
     with pytest.raises(ValueError, match=f"Quantity exceeds the order limit of {order_limit - 1}"):
         test_product.buy(order_limit)
+
+
+def test_promotion_invalid_discount_type():
+    with pytest.raises(TypeError, match="Discount percent must be an integer"):
+        PercentDiscount("Sale", "10")
+
+
+@pytest.mark.parametrize("discount_value", [-1, 101])
+def test_promotion_invalid_discount_value(discount_value):
+    with pytest.raises(ValueError, match="Discount percent must be between 0 and 100"):
+        PercentDiscount("Sale", discount_value)
+
+
+def test_promotion_second_half_price():
+    test_product = Product("Apple Neo", 100, 10)
+    test_product.promotion = SecondHalfPrice("BOGO 50%")
+    assert test_product.buy(2) == 150.0
+
+
+def test_promotion_third_one_free():
+    test_product = Product("Apple", 10, 10)
+    test_product.promotion = ThirdOneFree("3 for 2")
+    assert test_product.buy(3) == 20.0
+
+
+def test_promotion_percent_discount():
+    test_product = Product("Apple Neo", 100, 10)
+    test_product.promotion = PercentDiscount("10% Off", 10)
+    assert test_product.buy(5) == 450.0
+
+
+

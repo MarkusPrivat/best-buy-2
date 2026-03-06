@@ -1,56 +1,66 @@
 """
-A module for managing product entities in an inventory system.
+A module for managing product entities in an inventory system with promotion support.
 
-This module provides the `Product` class, which represents a product with attributes
-such as name, price, quantity, and active status. It includes methods for managing
-inventory, purchasing products, and checking product availability.
+This module provides a hierarchy of product classes for different inventory scenarios:
+- `Product`: Standard physical products with stock management.
+- `NonStockedProduct`: Digital/non-physical products without inventory tracking.
+- `LimitedProduct`: Physical products with per-order purchase quantity limits.
 
-Classes:
---------
-    Product:
-        A class to represent a product in an inventory system.
+All product types support promotional pricing through the `Promotion` interface,
+allowing flexible discount strategies (e.g., percentage discounts, "buy X get Y" offers).
+
+Class Hierarchy:
+----------------
+    Product (Base):
+        Core product with stock tracking and promotion support.
 
         Attributes:
-            self.name (str): Name of the product.
-            self.price (float): Price per unit.
-            self.quantity (int): Available stock quantity.
-            self.active (bool): Whether the product is available for purchase.
+            self.name (str): Product name (read-only).
+            self.price (float): Unit price with validation.
+            self.quantity (int): Current stock level (auto-managed).
+            self.active (bool): Availability status (auto-updated).
+            self.promotion (Promotion): Associated discount strategy.
 
         Methods:
-            get_quantity(): Returns current stock quantity.
-            set_quantity(quantity): Updates stock and adjusts active status.
-            is_active(): Returns active status.
-            activate(): Sets product to active.
-            deactivate(): Sets product to inactive.
-            show(): Prints product details.
-            buy(quantity): Processes a purchase and returns total price.
+            buy(quantity): Processes purchases with promotion application.
+            show(): Displays product details.
+
+    NonStockedProduct (Product):
+        Represents products without physical inventory (e.g., software licenses).
+        Overrides quantity management to always return 0.
+
+    LimitedProduct (Product):
+        Extends Product with per-order quantity limits.
+        Validates purchase quantities against the defined limit.
 """
+
 from promotions import Promotion
 
 class Product:
     """
-    A class representing a product in the store.
+    Represents a standard product in the store with stock tracking.
 
     Attributes:
         __name (str): The name of the product.
-        __price (float): The unit price of the product.
-        __quantity (int): The current stock level.
-        __active (bool): Status indicating if the product is available for sale.
+        __price (float | int): The unit price.
+        __quantity (int): Current stock level.
+        __active (bool): Whether the product is available for purchase.
+        __promotion (Promotion | None): Associated discount logic.
     """
 
 
     def __init__(self, name: str, price: float | int, quantity: int):
         """
-        Initializes a new Product instance with strict type and value validation.
+        Initializes a new Product instance.
 
         Args:
-            name (str): The name of the product. Must not be empty.
-            price (float): The unit price. Must be a non-negative number.
-            quantity (int): The amount of stock available. Must be a non-negative integer.
+            name (str): Name of the product (non-empty).
+            price (float | int): Price per unit (non-negative).
+            quantity (int): Initial stock (non-negative).
 
         Raises:
-            TypeError: If 'price' is not a number or 'quantity' is not an integer.
-            ValueError: If 'name' is empty, or if 'price' or 'quantity' are negative.
+            TypeError: If price is not numeric or quantity is not an integer.
+            ValueError: If name is empty or values are negative.
         """
         if not isinstance(price, (int, float)):
             raise TypeError("Price must be a number (int or float)")
@@ -67,33 +77,24 @@ class Product:
         self.__name = name
         self.__price = price
         self.__quantity = quantity
-        self.__active = self.__quantity > 0
+        self.__active = self.quantity > 0
 
     @property
     def quantity(self) -> int:
-        """
-        Returns the current stock quantity of the product.
-        """
+        """Returns the current stock quantity."""
         return self.__quantity
 
     @quantity.setter
     def quantity(self, quantity):
-        """
-        Updates the stock quantity.
-        Deactivates the product if quantity reaches zero.
-        """
+        """ Updates stock and automatically deactivates product if quantity hits zero."""
         self.__quantity = quantity
-        if self.__quantity <= 0:
+        if self.quantity <= 0:
             self.__quantity = 0
             self.deactivate()
 
-
     def is_active(self) -> bool:
-        """
-        Returns True if the product is currently active.
-        """
+        """Checks if the product is currently available for sale."""
         return self.__active
-
 
     def activate(self):
         """
@@ -101,54 +102,55 @@ class Product:
         Raises:
             ValueError: If quantity is 0 or less, preventing activation of empty stock.
         """
-        if self.__quantity < 0:
-            raise ValueError(f"Cannot activate '{self.__name}': Quantity is {self.__quantity}.")
+        if self.quantity <= 0:
+            raise ValueError(f"Cannot activate '{self.name}': Quantity is {self.quantity}.")
         self.__active = True
 
-
     def deactivate(self):
-        """
-        Sets the product status to inactive.
-        """
+        """ Sets the product status to inactive. """
         self.__active = False
 
-
     def show(self):
-        """
-        Prints a string representation of the product's current state.
-        """
-        print(f"{self.__name}, Price: ${self.__price}, Quantity: {self.__quantity}")
+        """ Prints a string representation of the product's current state. """
+        print(f"{self.name}, Price: ${self.price}, Quantity: {self.quantity}")
 
-
-    def buy(self, quantity: int) -> float:
+    def buy(self, quantity: int) -> float | int:
         """
-        Processes a purchase of the specified quantity.
+        Processes a purchase and updates inventory.
+
+        Args:
+            quantity (int): Amount to buy.
 
         Returns:
-            float: The total price of the purchase.
+            float: Total cost after applying promotions (if any).
 
         Raises:
-            ValueError: If quantity is not positive or exceeds stock.
+            ValueError: If quantity is non-positive or exceeds stock.
         """
         if quantity <= 0:
             raise ValueError("Purchase quantity must be positive")
-        if quantity > self.__quantity:
+        if quantity > self.quantity:
             raise ValueError("Not enough stock available.")
 
         new_quantity = self.quantity - quantity
         self.quantity = new_quantity
-        return float(self.__price * quantity)
+        if self.promotion:
+            return self.promotion.apply_promotion(self, quantity)
+        return float(self.price * quantity)
 
     @property
     def name(self) -> str:
+        """The name of the product (Read-only)."""
         return self.__name
 
     @property
     def price(self) -> float | int:
+        """The unit price of the product."""
         return self.__price
 
     @price.setter
     def price(self, value: float):
+        """Updates price with validation."""
         if not isinstance(value, (int, float)):
             raise TypeError("Price must be a number (int or float)")
         if value < 0:
@@ -157,50 +159,98 @@ class Product:
 
     @property
     def promotion(self) -> Promotion:
+        """The promotion currently applied to this product."""
         return self.__promotion
 
     @promotion.setter
     def promotion(self, promotion: Promotion):
+        """Sets a new promotion for the product."""
         if not isinstance(promotion, Promotion):
             raise TypeError("Promotion must be a Type Promotion")
         self.__promotion = promotion
 
 
 class NonStockedProduct(Product):
+    """
+    A product type that represents items without physical stock (e.g., digital software).
+
+    This class overrides quantity management to ensure that the product is
+    always available for purchase without depleting an inventory.
+    """
     def __init__(self, name: str, price: float | int):
+        """Initializes a non-stocked product with a fixed quantity of 0."""
         super().__init__(name, price, 0)
 
     @property
     def quantity(self) -> int:
+        """Always returns 0, as these products do not have a physical inventory."""
         return 0
 
     @quantity.setter
     def quantity(self, _quantity):
+        """Prevents changing the quantity, as it is irrelevant for non-stocked items."""
         print("Quantity can not be changed for non-stock products")
 
     def show(self):
+        """Displays product details without showing a quantity."""
         print(f"{self.name}, Price: ${self.price}")
 
-    def buy(self, quantity: int) -> float:
+    def buy(self, quantity: int) -> float | int:
+        """
+        Processes a purchase without checking or deducting stock levels.
+
+        Args:
+            quantity (int): The number of items to buy.
+
+        Returns:
+            float | int: Total price, applying promotions if available.
+        """
         if quantity <= 0:
             raise ValueError("Purchase quantity must be positive")
+        if self.promotion:
+            return self.promotion.apply_promotion(self, quantity)
         return float(self.price * quantity)
 
 
 class LimitedProduct(Product):
+    """
+    A product type that limits the amount a customer can buy in a single order.
+
+    Useful for promotional items or products with restricted availability.
+    """
     def __init__(self, name: str, price: float | int, quantity: int, order_limit: int):
+        """
+        Initializes a limited product with an additional order restriction.
+
+        Args:
+            order_limit (int): Maximum units allowed per single purchase.
+        """
         super().__init__(name, price, quantity)
         self.__order_limit = order_limit
 
     @property
     def order_limit(self):
+        """Returns the maximum allowed quantity per order."""
         return self.__order_limit
 
     def show(self):
+        """Displays product details including the specific order limit."""
         print(f"{self.name}, Price: ${self.price}, Quantity: {self.quantity}, "
               f"Order Limit: {self.order_limit}")
 
-    def buy(self, quantity: int) -> float:
+    def buy(self, quantity: int) -> float | int:
+        """
+        Processes a purchase after verifying the order limit.
+
+        Args:
+            quantity (int): The number of items to buy.
+
+        Raises:
+            ValueError: If quantity exceeds the defined order_limit.
+
+        Returns:
+            float | int: Total price calculated by the base class logic.
+        """
         if quantity > self.order_limit:
             raise ValueError(f"Quantity exceeds the order limit of {self.order_limit}")
         return super().buy(quantity)
