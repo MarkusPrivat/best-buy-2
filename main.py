@@ -197,7 +197,7 @@ def get_product_quantity(product_to_check: products.Product) -> int | None:
     """
     print("- ", end="")
     product_to_check.show()
-    product_quantity = product_to_check.get_quantity()
+    product_quantity = product_to_check.quantity
     while True:
         print("Type '0' to abort.")
         order_quantity = input("What amount do you want to order? ")
