@@ -49,15 +49,14 @@ Run specific test groups with markers:
 
 import pytest
 
-
 from products import Product, NonStockedProduct, LimitedProduct
 from promotions import PercentDiscount, SecondHalfPrice, ThirdOneFree
 
-
 INVALID_PRICE_TYPES = ["Best Price", ["Best Price"], {"Best Price"}, {"Best Price": 599}]
-INVALID_PRICE_TYPES_IDS= ["str", "list", "set", "dict"]
+INVALID_PRICE_TYPES_IDS = ["str", "list", "set", "dict"]
 INVALID_QUANTITY_TYPES = [1.1, "Many", ["Big"], {"100"}, {"Best": 599}]
 INVALID_QUANTITY_TYPES_IDS = ["float", "str", "list", "set", "dict"]
+
 
 @pytest.mark.parametrize('valid_price',
                          [599, 599.99],
@@ -103,7 +102,7 @@ def test_init_product_quantity_zero():
     assert isinstance(test_product, Product)
 
 
-@pytest.mark.parametrize("invalid_price_type",INVALID_PRICE_TYPES, ids=INVALID_PRICE_TYPES_IDS)
+@pytest.mark.parametrize("invalid_price_type", INVALID_PRICE_TYPES, ids=INVALID_PRICE_TYPES_IDS)
 def test_init_product_price_invalid_types(invalid_price_type):
     """Checks that invalid price types raise a TypeError."""
     with pytest.raises(TypeError, match="Price must be a number \(int or float\)"):
@@ -159,6 +158,7 @@ def test_product_set_price():
     test_product = Product("Apple Neo", 599, 5)
     test_product.price = 500
     assert test_product.price == 500
+
 
 def test_product_set_price_negativ():
     """Checks that setting a negative price raises a ValueError."""

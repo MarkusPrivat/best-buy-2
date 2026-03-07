@@ -35,20 +35,17 @@ class Store:
     Represents a store that holds an inventory of products.
     """
 
-
     def __init__(self, product_list: list[products.Product]):
         """
         Initializes the store with a list of products.
         """
         self.inventory = product_list
 
-
     def add_product(self, product) -> None:
         """
         Adds a single product to the store's inventory.
         """
         self.inventory.append(product)
-
 
     def remove_product(self, product) -> None:
         """
@@ -61,21 +58,17 @@ class Store:
             raise ValueError(f"Product '{product.name}' not found in inventory.")
         self.inventory.remove(product)
 
-
     def get_total_quantity(self) -> int:
         """
         Returns the combined quantity of all products in stock.
         """
         return sum(p.quantity for p in self.inventory)
 
-
     def get_all_products(self) -> list[products.Product]:
         """
         Returns a list of all active products currently in the inventory.
         """
         return [product for product in self.inventory if product.is_active()]
-
-
 
     def order(self, shopping_list: list[tuple[products.Product, int]]) -> float:
         """

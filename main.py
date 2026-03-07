@@ -62,7 +62,6 @@ Constants:
 import products
 import store
 
-
 APP_NAME = "Best Buy Store Manager"
 MENU_LINE = f"{(len(APP_NAME) + 16) * '-'}"
 MENU_NUM_EXIT = '4'
@@ -196,7 +195,7 @@ def get_product_quantity(product_to_check: products.Product) -> int | None:
         int | None: The validated quantity to order, or None if the user
                     chooses to abort the selection.
     """
-    print("- ", end= "")
+    print("- ", end="")
     product_to_check.show()
     product_quantity = product_to_check.get_quantity()
     while True:
@@ -272,15 +271,15 @@ def get_menu_choice() -> str:
 
 # Menu dispatcher:
 MENU_DISPATCHER = {
-     '1': {'cmd': store_list_all_products,
-            'menu_text': "List all products in store"},
-     '2': {'cmd': store_show_total_amount,
-            'menu_text': "Show total amount in store"},
-     '3': {'cmd': store_make_order,
-            'menu_text': "Make an order"},
-     '4':  {'cmd': exit_program,
-             'menu_text': "Quit"}
-    }
+    '1': {'cmd': store_list_all_products,
+          'menu_text': "List all products in store"},
+    '2': {'cmd': store_show_total_amount,
+          'menu_text': "Show total amount in store"},
+    '3': {'cmd': store_make_order,
+          'menu_text': "Make an order"},
+    '4': {'cmd': exit_program,
+          'menu_text': "Quit"}
+}
 
 
 def start(best_buy: store.Store):
@@ -299,9 +298,6 @@ def start(best_buy: store.Store):
         MENU_DISPATCHER[menu_choice]['cmd'](best_buy)
         if menu_choice == MENU_NUM_EXIT:
             break
-
-
-
 
 
 def main():

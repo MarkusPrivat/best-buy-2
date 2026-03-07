@@ -37,6 +37,7 @@ Classes:
 """
 from abc import ABC, abstractmethod
 
+
 class Promotion(ABC):
     """
     Abstract base class for all product promotions.
@@ -48,7 +49,8 @@ class Promotion(ABC):
         name (str): The descriptive name of the promotion.
         discount_percent (int): The percentage of the discount (0-100).
     """
-    def __init__(self, name: str, discount_percent: int =0):
+
+    def __init__(self, name: str, discount_percent: int = 0):
         """
         Initializes a promotion with a name and an optional discount percentage.
 
@@ -131,7 +133,8 @@ class SecondHalfPrice(Promotion):
     Promotion: Every second item of the same product is half price.
     Example: Buy 2, pay 1.5 times the price. Buy 4, pay 3 times the price.
     """
-    def apply_promotion(self, product, quantity) -> float| int:
+
+    def apply_promotion(self, product, quantity) -> float | int:
         """
         Calculates the price where every second item costs 50% less.
 
@@ -152,6 +155,7 @@ class ThirdOneFree(Promotion):
     Promotion: Buy three items of the same product, and the third one is free.
     Example: 3 for the price of 2, 6 for the price of 4, etc.
     """
+
     def apply_promotion(self, product, quantity) -> float | int:
         """
         Calculates the total price where every third item is free of charge.
@@ -173,6 +177,7 @@ class PercentDiscount(Promotion):
     Promotion: Applies a percentage-based discount to the total price.
     Example: 10% off the total, 50% off, etc.
     """
+
     def apply_promotion(self, product, quantity) -> float | int:
         """
         Calculates the price with a percentage discount applied.

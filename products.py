@@ -36,6 +36,7 @@ Class Hierarchy:
 
 from promotions import Promotion
 
+
 class Product:
     """
     Represents a standard product in the store with stock tracking.
@@ -47,7 +48,6 @@ class Product:
         __active (bool): Whether the product is available for purchase.
         __promotion (Promotion | None): Associated discount logic.
     """
-
 
     def __init__(self, name: str, price: float | int, quantity: int):
         """
@@ -177,6 +177,7 @@ class NonStockedProduct(Product):
     This class overrides quantity management to ensure that the product is
     always available for purchase without depleting an inventory.
     """
+
     def __init__(self, name: str, price: float | int):
         """Initializes a non-stocked product with a fixed quantity of 0."""
         super().__init__(name, price, 0)
@@ -218,6 +219,7 @@ class LimitedProduct(Product):
 
     Useful for promotional items or products with restricted availability.
     """
+
     def __init__(self, name: str, price: float | int, quantity: int, order_limit: int):
         """
         Initializes a limited product with an additional order restriction.
@@ -254,7 +256,6 @@ class LimitedProduct(Product):
         if quantity > self.order_limit:
             raise ValueError(f"Quantity exceeds the order limit of {self.order_limit}")
         return super().buy(quantity)
-
 
 
 def main():
