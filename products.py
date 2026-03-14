@@ -102,7 +102,7 @@ class Product:
         Raises:
             ValueError: If quantity is 0 or less, preventing activation of empty stock.
         """
-        if self.quantity <= 0:
+        if self.quantity <= 0 and not isinstance(self, NonStockedProduct):
             raise ValueError(f"Cannot activate '{self.name}': Quantity is {self.quantity}.")
         self.__active = True
 
@@ -112,7 +112,7 @@ class Product:
 
     def show(self):
         """ Prints a string representation of the product's current state. """
-        print(f"{self.name}, Price: ${self.price}, Quantity: {self.quantity}")
+        print(f"{self.name}, Price: ${self.price}, Quantity: {self.quantity}{self.promotion_info}")
 
     def buy(self, quantity: int) -> float | int:
         """
@@ -162,6 +162,13 @@ class Product:
         """The promotion currently applied to this product."""
         return self.__promotion
 
+    @property
+    def promotion_info(self) -> str:
+        """Returns the promotion name or 'None' if no promotion is active."""
+        if self.promotion and hasattr(self.promotion, 'name'):
+            return f", Promotion: {self.promotion.name}"
+        return ""
+
     @promotion.setter
     def promotion(self, promotion: Promotion):
         """Sets a new promotion for the product."""
@@ -181,6 +188,7 @@ class NonStockedProduct(Product):
     def __init__(self, name: str, price: float | int):
         """Initializes a non-stocked product with a fixed quantity of 0."""
         super().__init__(name, price, 0)
+        self.activate()
 
     @property
     def quantity(self) -> int:
@@ -194,7 +202,7 @@ class NonStockedProduct(Product):
 
     def show(self):
         """Displays product details without showing a quantity."""
-        print(f"{self.name}, Price: ${self.price}")
+        print(f"{self.name}, Price: ${self.price}, Quantity: Unlimited{self.promotion_info}")
 
     def buy(self, quantity: int) -> float | int:
         """
@@ -238,7 +246,7 @@ class LimitedProduct(Product):
     def show(self):
         """Displays product details including the specific order limit."""
         print(f"{self.name}, Price: ${self.price}, Quantity: {self.quantity}, "
-              f"Order Limit: {self.order_limit}")
+              f"Limited to {self.order_limit} per order!{self.promotion_info}")
 
     def buy(self, quantity: int) -> float | int:
         """

@@ -61,6 +61,7 @@ Constants:
 """
 import products
 import store
+import promotions
 
 APP_NAME = "Best Buy Store Manager"
 MENU_LINE = f"{(len(APP_NAME) + 16) * '-'}"
@@ -105,46 +106,94 @@ def store_show_total_amount(best_buy: store.Store) -> None:
     print(MENU_LINE)
 
 
-def store_make_order(best_buy: store.Store):
+def store_make_order(best_buy: store.Store) -> None:
     """
     Handles the interactive process of creating and placing a customer order.
 
-    This function guides the user through selecting products and specifying
-    quantities. It maintains a temporary order list and submits it to the
-    store for final processing. If no products are available or the user
-    aborts, the order is canceled.
+    This function manages the main order loop, coordinating product selection,
+    quantity validation, and final order submission. It uses a temporary
+    dictionary to consolidate quantities of the same product before processing.
 
     Args:
         best_buy (store.Store): The store instance where the order is placed.
-
-    Returns:
-        None: The function prints the result directly to the console.
     """
     if not best_buy.get_all_products():
         print("No products available.")
-        return None
-    order_list = []
+        return
+
+    consolidated_basket = {}
     store_list_all_products(best_buy)
+
     while True:
-        order_product = get_product(best_buy)
-        if not order_product:
+        product = get_product(best_buy)
+        if not product:
             break
+
         print(MENU_LINE)
-        order_quantity = get_product_quantity(order_product)
-        if not order_quantity:
+        quantity = get_product_quantity(product)
+
+        if quantity:
+            _process_basket_item(consolidated_basket, product, quantity)
+        else:
             print("Abort, product not added to order")
-            continue
-        order_list.append((order_product, order_quantity))
-        print("Product added to list!")
+
         print(MENU_LINE)
 
-    if not order_list:
+    if consolidated_basket:
+        _finalize_store_order(best_buy, consolidated_basket)
+    else:
         print("Abort, no product in order")
-        return None
-    total_value = best_buy.order(order_list)
-    print(MENU_LINE)
-    print(f"Order made! Total payment: ${total_value}\n")
-    return None
+
+
+def _process_basket_item(basket: dict, product: products.Product, quantity: int) -> None:
+    """
+    Validates and adds a product to the temporary basket.
+
+    Checks the combined quantity of the new request and existing basket items
+    against the product's available stock and specific order limits (for
+    LimitedProduct instances).
+
+    Args:
+        basket (dict): The current temporary order storage {Product: quantity}.
+        product (products.Product): The product to be added.
+        quantity (int): The quantity the user wants to add.
+    """
+    current_qty = basket.get(product, 0)
+    total_intended_qty = current_qty + quantity
+
+    if isinstance(product, products.LimitedProduct):
+        if total_intended_qty > product.order_limit:
+            print(f"Error: Maximum allowed for '{product.name}' is {product.order_limit}.")
+            print(f"You already have {current_qty} in your basket.")
+            return
+
+    if total_intended_qty > product.quantity:
+        print(f"Error: Not enough stock. Only {product.quantity} available in total.")
+        return
+
+    basket[product] = total_intended_qty
+    print(f"Added {quantity}x '{product.name}' to your list!")
+
+
+def _finalize_store_order(best_buy: store.Store, basket: dict) -> None:
+    """
+    Submits the consolidated order to the store and displays the result.
+
+    Converts the internal basket dictionary into the format required by the
+    Store's order method and handles potential execution errors.
+
+    Args:
+        best_buy (store.Store): The store instance to process the order.
+        basket (dict): The validated and consolidated order data.
+    """
+    try:
+        order_list = list(basket.items())
+        total_payment = best_buy.order(order_list)
+
+        print(MENU_LINE)
+        print(f"Order made! Total payment: ${total_payment}\n")
+    except ValueError as error:
+        print(f"Order failed during processing: {error}")
 
 
 def get_product(best_buy: store.Store) -> products.Product | None:
@@ -302,19 +351,28 @@ def start(best_buy: store.Store):
 
 def main():
     """
-    Main application module for the Best Buy Store Manager.
+    Initializes the store with a default product inventory and assigns promotions.
 
-    This script initializes a store with a default product inventory and
-    provides a command-line interface for listing products, checking
-    stock levels, and placing orders.
+    This setup demonstrates different product types (Standard, NonStocked, Limited)
+    and applies various promotion strategies (Second Half Price, Third One Free,
+    Percentage Discount) to showcase the store's pricing logic.
     """
-    # setup initial stock of inventory
-    product_list = [products.Product("MacBook Air M2", price=1450, quantity=100),
-                    products.Product("Bose QuietComfort Earbuds", price=250, quantity=500),
-                    products.Product("Google Pixel 7", price=500, quantity=250),
-                    products.NonStockedProduct("Windows License", price=125),
-                    products.LimitedProduct("Shipping", price=10, quantity=250, order_limit=1)
-                    ]
+    second_half_price = promotions.SecondHalfPrice("Second Half Price!")
+    third_one_free = promotions.ThirdOneFree("3 for 2!")
+    thirty_percent = promotions.PercentDiscount("30% Off!", discount_percent=30)
+
+    product_list = [
+        products.Product("MacBook Air M2", price=1450, quantity=100),
+        products.Product("Bose QuietComfort Earbuds", price=250, quantity=500),
+        products.Product("Google Pixel 7", price=500, quantity=250),
+        products.NonStockedProduct("Windows License", price=125),
+        products.LimitedProduct("Shipping", price=10, quantity=250, order_limit=1)
+    ]
+
+    product_list[0].promotion = thirty_percent
+    product_list[1].promotion = second_half_price
+    product_list[2].promotion = third_one_free
+
     best_buy = store.Store(product_list)
     start(best_buy)
 
