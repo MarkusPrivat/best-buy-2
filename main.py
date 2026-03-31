@@ -167,9 +167,10 @@ def _process_basket_item(basket: dict, product: products.Product, quantity: int)
             print(f"You already have {current_qty} in your basket.")
             return
 
-    if total_intended_qty > product.quantity:
-        print(f"Error: Not enough stock. Only {product.quantity} available in total.")
-        return
+    if not isinstance(product, products.NonStockedProduct):
+        if total_intended_qty > product.quantity:
+            print(f"Error: Not enough stock. Only {product.quantity} available in total.")
+            return
 
     basket[product] = total_intended_qty
     print(f"Added {quantity}x '{product.name}' to your list!")
@@ -247,6 +248,8 @@ def get_product_quantity(product_to_check: products.Product) -> int | None:
     print("- ", end="")
     product_to_check.show()
     product_quantity = product_to_check.quantity
+    is_unlimited = isinstance(product_to_check, products.NonStockedProduct)
+
     while True:
         print("Type '0' to abort.")
         order_quantity = input("What amount do you want to order? ")
@@ -255,9 +258,15 @@ def get_product_quantity(product_to_check: products.Product) -> int | None:
                 return None
             if not order_quantity.isnumeric():
                 raise ValueError(f"'{order_quantity}' must be a number.")
-            if not 0 < int(order_quantity) <= product_quantity:
+
+            val_quantity = int(order_quantity)
+
+            if not is_unlimited and (val_quantity > product_quantity or val_quantity <= 0):
                 raise ValueError(f"Not enough quantity, only {product_quantity} left.")
-            return int(order_quantity)
+            elif is_unlimited and val_quantity <= 0:
+                raise ValueError("Quantity must be greater than 0.")
+
+            return val_quantity
         except ValueError as error:
             print(error)
 
